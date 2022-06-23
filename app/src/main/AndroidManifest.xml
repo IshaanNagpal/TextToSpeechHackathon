@@ -23,6 +23,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".PaymentSuccessActivity" />
+        <activity android:name=".CardActivity" />
 
 
     </application>
