@@ -6,12 +6,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.view.KeyEvent
-import android.view.MotionEvent
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -34,25 +34,33 @@ class MainActivity : AppCompatActivity() {
 		editText = findViewById(R.id.text)
 		speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
 		textToSpeech = TextToSpeech(this) { }
-		textToSpeech!!.language = Locale.US
+		textToSpeech!!.language = Locale.ENGLISH
 		speechRecognizer?.setRecognitionListener(object : RecognitionListener {
 			override fun onReadyForSpeech(bundle: Bundle) {}
 			override fun onBeginningOfSpeech() {
 				editText?.setText("")
-				editText?.setHint("Listening...")
+				editText?.hint = "Listening..."
 			}
 
 			override fun onRmsChanged(v: Float) {}
 			override fun onBufferReceived(bytes: ByteArray) {}
 			override fun onEndOfSpeech() {}
 			override fun onError(i: Int) {
-				textToSpeech!!.speak("Hey loser say it again", TextToSpeech.QUEUE_ADD, null)
+				Handler().postDelayed({
+					startActivity(Intent(this@MainActivity, CardActivity::class.java))
+					finish()
+				}, 5000)
+//				textToSpeech!!.speak("on error", TextToSpeech.QUEUE_ADD, null)
 			}
 
 			override fun onResults(bundle: Bundle) {
 				val data = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-				editText?.setText(data!![0])
-				textToSpeech!!.speak("", TextToSpeech.QUEUE_ADD, null)
+				if (data!![0].equals("Card payment")) {
+					textToSpeech!!.speak("Ok taking you to card payments screen", TextToSpeech.QUEUE_ADD, null)
+					startActivity(Intent(this@MainActivity, CardActivity::class.java))
+				} else {
+					textToSpeech!!.speak("I did not understand. Please repeat", TextToSpeech.QUEUE_ADD, null)
+				}
 			}
 
 			override fun onPartialResults(bundle: Bundle) {}
@@ -73,7 +81,7 @@ class MainActivity : AppCompatActivity() {
 
 	override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
 		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-		if (requestCode == RecordAudioRequestCode && grantResults.size > 0) {
+		if (requestCode == RecordAudioRequestCode && grantResults.isNotEmpty()) {
 			if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 				Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
 			}
@@ -89,14 +97,16 @@ class MainActivity : AppCompatActivity() {
 				speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
 				speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
 				speechRecognizer!!.startListening(speechRecognizerIntent)
+
+				speechRecognizer!!.stopListening()
 			}
 			return true
 		} else if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
 			return true
 		}
-		if (event.action == MotionEvent.ACTION_UP) {
-			speechRecognizer!!.stopListening()
-		}
+//		if (event.action == MotionEvent.ACTION_UP) {
+//			speechRecognizer!!.stopListening()
+//		}
 		return super.onKeyDown(keyCode, event)
 	}
 
